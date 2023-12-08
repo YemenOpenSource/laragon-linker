@@ -1,0 +1,233 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Define color codes
+ */
+class Colors
+{
+    public const RESET = "\033[0m";
+    public const RED = "\033[0;31m";
+    public const GREEN = "\033[0;32m";
+    public const YELLOW = "\033[0;33m";
+    public const BLACK = "\033[0;30m";
+    public const BLUE = "\033[0;34m";
+    public const MAGENTA = "\033[0;35m";
+    public const CYAN = "\033[0;36m";
+    public const WHITE = "\033[0;37m";
+}
+
+class SymlinkMaker
+{
+    public function __construct(
+      public $targetFile = null,
+      public $dirName = null,
+      public $laragonDir = null,
+      public $symlinkFile = null,
+    ) {
+      $this->targetFile = $targetFile ?? getcwd(); // original path with dir name
+      $this->dirName = $dirName ?? basename($this->targetFile); // original dir name
+      $this->laragonDir = $laragonDir ?? Config::getLaragonDir();
+      $this->symlinkFile = $symlinkFile ?? $this->laragonDir . DIRECTORY_SEPARATOR . $this->dirName;
+    }
+
+    public function makeSymlink()
+    {
+        try {
+            $targetFile = $this->targetFile;
+            $dirName = $this->dirName;
+            $laragonDir = $this->laragonDir;
+            $symlinkFile = $this->symlinkFile;
+
+            // Check if file exsits
+            self::checkFileIfExist($symlinkFile);
+
+            // Create the symlink
+            if (symlink($targetFile, $symlinkFile)) {
+                echo Colors::GREEN . "INFO" . Colors::CYAN . " The [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] link has been connected to [" . Colors::RESET . $targetFile . Colors::CYAN . "].\n";
+                echo Colors::YELLOW . "Restart Laragon to see effect.";
+                Config::reloadLaragon();
+            } else {
+                echo Colors::RED . "ERROR" . Colors::RESET . " Failed to create symlink.";
+            }
+        } catch (\Throwable $th) {
+            echo $th->getMessage();
+        }
+    }
+
+    public function deleteSymlink()
+    {
+      try {
+        $symlinkFile = $this->symlinkFile;
+        // Check if file exsits
+        self::checkFileIfNotExist($symlinkFile);
+
+        // Delete the symlink file
+        if (rmdir($symlinkFile)) {
+          echo Colors::GREEN . "INFO" . Colors::CYAN . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] has been deleted.\n";
+        } else {
+          echo Colors::RED . "ERROR" . Colors::RESET . " Failed to delete symlink file.";
+        }
+      } catch (\Throwable $th) {
+        echo Colors::RED . "ERROR" . Colors::RESET . " " . $th->getMessage();
+      }
+    }
+
+    protected static function checkFileIfExist($symlinkFile)
+    {
+      // Check if the symlink file already exists
+      if (file_exists($symlinkFile)) {
+        throw new \Exception(Colors::YELLOW . "WARNING" . Colors::CYAN . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] already exists.\n");
+      }
+    }
+
+    protected static function checkFileIfNotExist($symlinkFile)
+    {
+      // Check if the symlink file already exists
+      if (!file_exists($symlinkFile)) {
+        throw new \Exception(Colors::YELLOW . "WARNING" . Colors::RED . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::RED . "] not exists.\n");
+      }
+    }
+}
+
+/**
+ * Define config of symlink maker
+ */
+class Config
+{
+    public const VERSION = '1.0.0'; // update tag and release as is.
+    private $configFileName = 'laralink.json';
+
+    public function __construct(
+      public $laragonPath = null,
+      public $userProfilePath = null,
+      public $jsonFilePath = null
+    ) {
+        // Define the user profile path
+        $this->userProfilePath = $userProfilePath ?? getenv('USERPROFILE');
+        // Define the path to the JSON file
+        $this->jsonFilePath = $this->userProfilePath . DIRECTORY_SEPARATOR . $this->configFileName;
+    }
+
+    public static function getConfigFileName()
+    {
+        $self = new static;
+        return $self->configFileName;
+    }
+
+    public static function getConfigFilePath()
+    {
+        // Define the user profile path
+        $userProfilePath = getenv('USERPROFILE');
+        // Define the path to the JSON file
+        return $userProfilePath . DIRECTORY_SEPARATOR . self::getConfigFileName();
+    }
+
+    public static function checkConfigFile()
+    {
+        return file_exists(self::getConfigFilePath());
+    }
+
+    public function setLaragonPath()
+    {
+        $initialConfig = [
+            "www" => $this->laragonPath . DIRECTORY_SEPARATOR . 'www',
+        ];
+        file_put_contents($this->jsonFilePath, json_encode($initialConfig));
+
+        // Read the existing JSON data
+        $configData = json_decode(file_get_contents($this->jsonFilePath), true);
+    }
+
+    public static function getLaragonDir()
+    {
+        if (!self::checkConfigFile()) {
+            // Get the user profile path
+            $userProfilePath = getenv('USERPROFILE');
+            // Get the config file name
+            $configFileName = self::getConfigFileName();
+            // Throw an exception if config file is not exist.
+            throw new Exception("The config file [{$configFileName}] is not found in {$userProfilePath}.");
+        }
+
+        // Read the contents of the config file
+        $configContents = file_get_contents(self::getConfigFilePath());
+        // Decode the JSON contents into an associative array
+        $configData = json_decode($configContents, true);
+
+        // Check if the 'www' key exists in the config data
+        if (! isset($configData['www'])) {
+            // Throw an exception or return a default value if the 'www' key is not found
+            throw new Exception("The 'www' key is not found in the config file.");
+        }
+
+        return $configData['www'];
+    }
+
+    public static function info()
+    {
+        echo Colors::CYAN . "Laragon Linker " . Colors::GREEN . Config::VERSION . " \n";
+        
+        echo Colors::YELLOW . "\nUsage: \n";
+        echo Colors::RESET . "   command [options] [arguments] \n";
+        
+        echo Colors::YELLOW . "\nOptions: \n";
+        echo Colors::GREEN . "  -h, --help  " . Colors::RESET . "Dispaly help for the " . Colors::CYAN . "Laragon Linker " . Colors::RESET . "tool.\n";
+
+        echo Colors::YELLOW . "\nAvailable commands: \n";
+        echo Colors::GREEN . "  link    " . Colors::RESET . "Link current directory with laragon/www. \n";
+        echo Colors::GREEN . "  unlink  " . Colors::RESET . "Remove current directory from laragon/www.\n";
+        echo Colors::GREEN . "  path    " . Colors::RESET . "Get current path of laragon. \n";
+        echo Colors::GREEN . "  set     " . Colors::RESET . "Set the path of laragon. \n";
+        echo Colors::GREEN . "  links   " . Colors::RESET . "Get paths of linked projects (comming soon). \n";
+    }
+
+    public static function reloadLaragon()
+    {
+        $command = $this->laragonPath . DIRECTORY_SEPARATOR . 'laragon.exe reload';
+        $output = [];
+        $returnVar = 0;
+
+        exec($command, $output, $returnVar);
+
+        // Output the command output and return value
+        echo "Command Output:\n";
+        foreach ($output as $line) {
+            echo $line . "\n";
+        }
+    }
+}
+
+if (isset($argv[1])) {
+    if (!Config::checkConfigFile()) {
+        echo Colors::CYAN . 'Enter the path of laragon: ' . Colors::RESET;
+        (new Config(laragonPath: trim(fgets(STDIN))))->setLaragonPath();
+    }
+
+    // Usage: link current directory to laragon www path
+    if ($argv[1] == 'link') {
+        (new SymlinkMaker)->makeSymlink();
+    }
+
+    // Usage: unlink current directory from laragon www path
+    if ($argv[1] == 'unlink') {
+       (new SymlinkMaker)->deleteSymlink();
+    }
+
+    // Usage: get the path of laragon
+    if ($argv[1] == 'path') {
+       echo Colors::GREEN . Config::getLaragonDir();
+    }
+
+    // Usage: set the path of laragon
+    if ($argv[1] == 'set') {
+        echo Colors::CYAN . 'Enter the path of laragon: ' . Colors::RESET;
+        (new Config(laragonPath: trim(fgets(STDIN))))->setLaragonPath();
+    }
+
+    // Usage: get help
+    if ($argv[1] == '--help' || $argv[1] == '-h') {
+        Config::info();
+    }
+} else {
+    Config::info();
+}

@@ -1,0 +1,24 @@
+{
+    "name": "yemenopensource/laragon-linker",
+    "description": "A global composer package that let you link your project with laragon www path as symlink.",
+    "keywords": ["php", "laragon", "linker", "muath-ye"],
+    "homepage": "https://github.com/YemenOpenSource/laragon-linker",
+    "type": "project",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/YemenOpenSource/laragon-linker/issues",
+        "source": "https://github.com/YemenOpenSource/laragon-linker"
+    },
+    "authors": [
+        {
+            "name": "Muath Alsowadi",
+            "email": "muath.ye@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "bin": ["bin/linker"]
+}
