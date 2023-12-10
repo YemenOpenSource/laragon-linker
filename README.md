@@ -12,6 +12,8 @@ composer global require yemenopensource/laragon-linker
 
 ## Usage
 
+![طريقة استخدام مكتبة laragon linker](docs/assets/طريقة استخدام مكتبة laragon linker.mp4)
+
 Link current directory with laragon/www.
 
 ```sh
