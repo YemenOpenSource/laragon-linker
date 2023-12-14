@@ -45,8 +45,8 @@ class SymlinkMaker
             if (symlink($targetFile, $symlinkFile)) {
                 echo Colors::GREEN . "INFO" . Colors::CYAN . " The [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] link has been connected to [" . Colors::RESET . $targetFile . Colors::CYAN . "].\n" . Colors::RESET;
                 // TODO: check laragon config to determine http or https schema and domain tld
-                echo Colors::GREEN . "Visit your website at: http://" . $symlinkFile . '.test' . Colors::RESET;
-                echo Colors::YELLOW . "Restart Laragon to see effect." . Colors::RESET;
+                echo Colors::CYAN . "Visit your website at: " . Colors::CYAN . "http://" . $dirName . ".test\n" . Colors::RESET;
+                echo Colors::YELLOW . "Restart Laragon to see effect.\n" . Colors::RESET;
                 Config::reloadLaragon();
             } else {
                 echo Colors::RED . "ERROR" . Colors::RESET . " Failed to create symlink." . Colors::RESET;
