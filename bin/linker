@@ -19,15 +19,15 @@ class Colors
 class SymlinkMaker
 {
     public function __construct(
-      public $targetFile = null,
-      public $dirName = null,
-      public $laragonDir = null,
-      public $symlinkFile = null,
+        public $targetFile = null,
+        public $dirName = null,
+        public $laragonDir = null,
+        public $symlinkFile = null,
     ) {
-      $this->targetFile = $targetFile ?? getcwd(); // original path with dir name
-      $this->dirName = $dirName ?? basename($this->targetFile); // original dir name
-      $this->laragonDir = $laragonDir ?? Config::getLaragonDir();
-      $this->symlinkFile = $symlinkFile ?? $this->laragonDir . DIRECTORY_SEPARATOR . $this->dirName;
+        $this->targetFile = $targetFile ?? getcwd(); // original path with dir name
+        $this->dirName = $dirName ?? basename($this->targetFile); // original dir name
+        $this->laragonDir = $laragonDir ?? Config::getLaragonDir();
+        $this->symlinkFile = $symlinkFile ?? $this->laragonDir . DIRECTORY_SEPARATOR . $this->dirName;
     }
 
     public function makeSymlink()
@@ -43,49 +43,51 @@ class SymlinkMaker
 
             // Create the symlink
             if (symlink($targetFile, $symlinkFile)) {
-                echo Colors::GREEN . "INFO" . Colors::CYAN . " The [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] link has been connected to [" . Colors::RESET . $targetFile . Colors::CYAN . "].\n";
-                echo Colors::YELLOW . "Restart Laragon to see effect.";
+                echo Colors::GREEN . "INFO" . Colors::CYAN . " The [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] link has been connected to [" . Colors::RESET . $targetFile . Colors::CYAN . "].\n" . Colors::RESET;
+                // TODO: check laragon config to determine http or https schema and domain tld
+                echo Colors::GREEN . "Visit your website at: http://" . $symlinkFile . '.test' . Colors::RESET;
+                echo Colors::YELLOW . "Restart Laragon to see effect." . Colors::RESET;
                 Config::reloadLaragon();
             } else {
-                echo Colors::RED . "ERROR" . Colors::RESET . " Failed to create symlink.";
+                echo Colors::RED . "ERROR" . Colors::RESET . " Failed to create symlink." . Colors::RESET;
             }
         } catch (\Throwable $th) {
-            echo $th->getMessage();
+            echo $th->getMessage() . Colors::RESET;
         }
     }
 
     public function deleteSymlink()
     {
-      try {
-        $symlinkFile = $this->symlinkFile;
-        // Check if file exsits
-        self::checkFileIfNotExist($symlinkFile);
+        try {
+            $symlinkFile = $this->symlinkFile;
+            // Check if file exsits
+            self::checkFileIfNotExist($symlinkFile);
 
-        // Delete the symlink file
-        if (rmdir($symlinkFile)) {
-          echo Colors::GREEN . "INFO" . Colors::CYAN . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] has been deleted.\n";
-        } else {
-          echo Colors::RED . "ERROR" . Colors::RESET . " Failed to delete symlink file.";
+            // Delete the symlink file
+            if (rmdir($symlinkFile)) {
+                echo Colors::GREEN . "INFO" . Colors::CYAN . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] has been deleted.\n" . Colors::RESET;
+            } else {
+                echo Colors::RED . "ERROR" . Colors::RESET . " Failed to delete symlink file." . Colors::RESET;
+            }
+        } catch (\Throwable $th) {
+            echo Colors::RED . "ERROR" . Colors::RESET . " " . $th->getMessage() . Colors::RESET;
         }
-      } catch (\Throwable $th) {
-        echo Colors::RED . "ERROR" . Colors::RESET . " " . $th->getMessage();
-      }
     }
 
     protected static function checkFileIfExist($symlinkFile)
     {
-      // Check if the symlink file already exists
-      if (file_exists($symlinkFile)) {
-        throw new \Exception(Colors::YELLOW . "WARNING" . Colors::CYAN . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] already exists.\n");
-      }
+        // Check if the symlink file already exists
+        if (file_exists($symlinkFile)) {
+            throw new \Exception(Colors::YELLOW . "WARNING" . Colors::CYAN . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::CYAN . "] already exists.\n");
+        }
     }
 
     protected static function checkFileIfNotExist($symlinkFile)
     {
-      // Check if the symlink file already exists
-      if (!file_exists($symlinkFile)) {
-        throw new \Exception(Colors::YELLOW . "WARNING" . Colors::RED . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::RED . "] not exists.\n");
-      }
+        // Check if the symlink file already exists
+        if (!file_exists($symlinkFile)) {
+            throw new \Exception(Colors::YELLOW . "WARNING" . Colors::RED . " The symlink file [" . Colors::RESET . $symlinkFile . Colors::RED . "] not exists.\n");
+        }
     }
 }
 
@@ -98,9 +100,9 @@ class Config
     private $configFileName = 'laralink.json';
 
     public function __construct(
-      public $laragonPath = null,
-      public $userProfilePath = null,
-      public $jsonFilePath = null
+        public $laragonPath = null,
+        public $userProfilePath = null,
+        public $jsonFilePath = null
     ) {
         // Define the user profile path
         $this->userProfilePath = $userProfilePath ?? getenv('USERPROFILE');
@@ -110,7 +112,7 @@ class Config
 
     public static function getConfigFileName()
     {
-        $self = new static;
+        $self = new static();
         return $self->configFileName;
     }
 
@@ -155,7 +157,7 @@ class Config
         $configData = json_decode($configContents, true);
 
         // Check if the 'www' key exists in the config data
-        if (! isset($configData['www'])) {
+        if (!isset($configData['www'])) {
             // Throw an exception or return a default value if the 'www' key is not found
             throw new Exception("The 'www' key is not found in the config file.");
         }
@@ -165,20 +167,20 @@ class Config
 
     public static function info()
     {
-        echo Colors::CYAN . "Laragon Linker " . Colors::GREEN . Config::VERSION . " \n";
-        
-        echo Colors::YELLOW . "\nUsage: \n";
-        echo Colors::RESET . "   command [options] [arguments] \n";
-        
-        echo Colors::YELLOW . "\nOptions: \n";
-        echo Colors::GREEN . "  -h, --help  " . Colors::RESET . "Dispaly help for the " . Colors::CYAN . "Laragon Linker " . Colors::RESET . "tool.\n";
+        echo Colors::CYAN . "Laragon Linker " . Colors::GREEN . Config::VERSION . " \n" . Colors::RESET;
 
-        echo Colors::YELLOW . "\nAvailable commands: \n";
-        echo Colors::GREEN . "  link    " . Colors::RESET . "Link current directory with laragon/www. \n";
-        echo Colors::GREEN . "  unlink  " . Colors::RESET . "Remove current directory from laragon/www.\n";
-        echo Colors::GREEN . "  path    " . Colors::RESET . "Get current path of laragon. \n";
-        echo Colors::GREEN . "  set     " . Colors::RESET . "Set the path of laragon. \n";
-        echo Colors::GREEN . "  links   " . Colors::RESET . "Get paths of linked projects (comming soon). \n";
+        echo Colors::YELLOW . "\nUsage: \n" . Colors::RESET;
+        echo Colors::RESET . "   command [options] [arguments] \n" . Colors::RESET;
+
+        echo Colors::YELLOW . "\nOptions: \n" . Colors::RESET;
+        echo Colors::GREEN . "  -h, --help  " . Colors::RESET . "Dispaly help for the " . Colors::CYAN . "Laragon Linker " . Colors::RESET . "tool.\n" . Colors::RESET;
+
+        echo Colors::YELLOW . "\nAvailable commands: \n" . Colors::RESET;
+        echo Colors::GREEN . "  link    " . Colors::RESET . "Link current directory with laragon/www. \n" . Colors::RESET;
+        echo Colors::GREEN . "  unlink  " . Colors::RESET . "Remove current directory from laragon/www.\n" . Colors::RESET;
+        echo Colors::GREEN . "  path    " . Colors::RESET . "Get current path of laragon. \n" . Colors::RESET;
+        echo Colors::GREEN . "  set     " . Colors::RESET . "Set the path of laragon. \n" . Colors::RESET;
+        echo Colors::GREEN . "  links   " . Colors::RESET . "Get paths of linked projects (comming soon). \n" . Colors::RESET;
     }
 
     public static function reloadLaragon()
@@ -190,9 +192,9 @@ class Config
         exec($command, $output, $returnVar);
 
         // Output the command output and return value
-        echo "Command Output:\n";
+        echo "Command Output:\n" . Colors::RESET;
         foreach ($output as $line) {
-            echo $line . "\n";
+            echo $line . "\n" . Colors::RESET;
         }
     }
 }
@@ -205,17 +207,17 @@ if (isset($argv[1])) {
 
     // Usage: link current directory to laragon www path
     if ($argv[1] == 'link') {
-        (new SymlinkMaker)->makeSymlink();
+        (new SymlinkMaker())->makeSymlink();
     }
 
     // Usage: unlink current directory from laragon www path
     if ($argv[1] == 'unlink') {
-       (new SymlinkMaker)->deleteSymlink();
+        (new SymlinkMaker())->deleteSymlink();
     }
 
     // Usage: get the path of laragon
     if ($argv[1] == 'path') {
-       echo Colors::GREEN . Config::getLaragonDir();
+        echo Colors::GREEN . Config::getLaragonDir() . Colors::RESET;
     }
 
     // Usage: set the path of laragon
