@@ -38,7 +38,7 @@ class SymlinkMaker
             $laragonDir = $this->laragonDir;
             $symlinkFile = $this->symlinkFile;
 
-            // Check if file exsits
+            // Check if file exists
             self::checkFileIfExist($symlinkFile);
 
             // Create the symlink
@@ -60,7 +60,7 @@ class SymlinkMaker
     {
         try {
             $symlinkFile = $this->symlinkFile;
-            // Check if file exsits
+            // Check if file exists
             self::checkFileIfNotExist($symlinkFile);
 
             // Delete the symlink file
@@ -173,19 +173,20 @@ class Config
         echo Colors::RESET . "   command [options] [arguments] \n" . Colors::RESET;
 
         echo Colors::YELLOW . "\nOptions: \n" . Colors::RESET;
-        echo Colors::GREEN . "  -h, --help  " . Colors::RESET . "Dispaly help for the " . Colors::CYAN . "Laragon Linker " . Colors::RESET . "tool.\n" . Colors::RESET;
+        echo Colors::GREEN . "  -h, --help  " . Colors::RESET . "Display help for the " . Colors::CYAN . "Laragon Linker " . Colors::RESET . "tool.\n" . Colors::RESET;
 
         echo Colors::YELLOW . "\nAvailable commands: \n" . Colors::RESET;
-        echo Colors::GREEN . "  link    " . Colors::RESET . "Link current directory with laragon/www. \n" . Colors::RESET;
-        echo Colors::GREEN . "  unlink  " . Colors::RESET . "Remove current directory from laragon/www.\n" . Colors::RESET;
-        echo Colors::GREEN . "  path    " . Colors::RESET . "Get current path of laragon. \n" . Colors::RESET;
-        echo Colors::GREEN . "  set     " . Colors::RESET . "Set the path of laragon. \n" . Colors::RESET;
-        echo Colors::GREEN . "  links   " . Colors::RESET . "Get paths of linked projects (comming soon). \n" . Colors::RESET;
+        echo Colors::GREEN . "  link       " . Colors::RESET . "Link current directory with laragon/www. \n" . Colors::RESET;
+        echo Colors::GREEN . "  unlink     " . Colors::RESET . "Remove current directory from laragon/www.\n" . Colors::RESET;
+        echo Colors::GREEN . "  path       " . Colors::RESET . "Get current path of laragon. \n" . Colors::RESET;
+        echo Colors::GREEN . "  set        " . Colors::RESET . "Set the path of laragon. \n" . Colors::RESET;
+        echo Colors::GREEN . "  links      " . Colors::RESET . "Get paths of linked projects (coming soon). \n" . Colors::RESET;
+        echo Colors::GREEN . "  php-scoop " . Colors::RESET . " Create symlinks for PHP versions from Scoop. \n" . Colors::RESET;
     }
 
     public static function reloadLaragon()
     {
-        $command = $this->laragonPath . DIRECTORY_SEPARATOR . 'laragon.exe reload';
+        $command = self::getLaragonDir() . DIRECTORY_SEPARATOR . 'laragon.exe reload';
         $output = [];
         $returnVar = 0;
 
@@ -201,29 +202,76 @@ class Config
 
 if (isset($argv[1])) {
     if (!Config::checkConfigFile()) {
-        echo Colors::CYAN . 'Enter the path of laragon: ' . Colors::RESET;
+        echo Colors::CYAN . 'Enter the path of Laragon: ' . Colors::RESET;
         (new Config(laragonPath: trim(fgets(STDIN))))->setLaragonPath();
     }
 
-    // Usage: link current directory to laragon www path
+    // Usage: link current directory to Laragon www path
     if ($argv[1] == 'link') {
         (new SymlinkMaker())->makeSymlink();
     }
 
-    // Usage: unlink current directory from laragon www path
+    // Usage: unlink current directory from Laragon www path
     if ($argv[1] == 'unlink') {
         (new SymlinkMaker())->deleteSymlink();
     }
 
-    // Usage: get the path of laragon
+    // Usage: get the path of Laragon
     if ($argv[1] == 'path') {
         echo Colors::GREEN . Config::getLaragonDir() . Colors::RESET;
     }
 
-    // Usage: set the path of laragon
+    // Usage: set the path of Laragon
     if ($argv[1] == 'set') {
-        echo Colors::CYAN . 'Enter the path of laragon: ' . Colors::RESET;
+        echo Colors::CYAN . 'Enter the path of Laragon: ' . Colors::RESET;
         (new Config(laragonPath: trim(fgets(STDIN))))->setLaragonPath();
+    }
+
+    // Usage: create symlinks for PHP versions from Scoop
+    if ($argv[1] == 'php-scoop') {
+        // Get the username dynamically
+        $userName = getenv('USERNAME');
+
+        // Define source directory
+        $scoopAppsPath = "C:\\Users\\$userName\\scoop\\apps";
+
+        // Ask the user for the Laragon root path with a default value
+        $defaultLaragonPath = str_replace('www', '', Config::getLaragonDir());
+        echo "Enter Laragon root path [default: $defaultLaragonPath]: ";
+        $laragonRootPath = trim(fgets(STDIN));
+
+        // Use the default path if the user input is empty
+        $laragonPhpPath = !empty($laragonRootPath) ? $laragonRootPath . "\\bin\\php" : $defaultLaragonPath . "\\bin\\php";
+
+        // Ensure source and destination directories exist
+        if (!is_dir($scoopAppsPath)) {
+            die("Error: Scoop apps directory does not exist.\n");
+        }
+
+        if (!is_dir($laragonPhpPath)) {
+            die("Error: Laragon PHP directory does not exist.\n");
+        }
+
+        // Get a list of all installed PHP versions in the Scoop apps directory
+        $phpVersions = glob($scoopAppsPath . "\\php*\\current", GLOB_ONLYDIR);
+
+        foreach ($phpVersions as $phpVersionPath) {
+            // Extract the PHP version from the path
+            $phpVersion = basename(str_replace('current', '', $phpVersionPath));
+
+            // Define the destination path for the symlink in Laragon
+            $destinationPath = $laragonPhpPath . "\\" . $phpVersion;
+
+            // Create a symbolic link
+            if (!file_exists($destinationPath)) {
+                symlink($phpVersionPath, $destinationPath);
+                echo "Symlink created for PHP version: $phpVersion\n";
+            } else {
+                echo "Symlink already exists for PHP version: $phpVersion\n";
+            }
+        }
+
+        echo "All symlinks created successfully.\n";
     }
 
     // Usage: get help
